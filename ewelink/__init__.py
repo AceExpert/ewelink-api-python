@@ -7,15 +7,16 @@ string,\
 random,\
 json, uuid
 from .constants import Constants
+from .exceptions import *
 
 class Ewelink(Constants):
-    def __init__(self, email: str, password: str, region='us',phone=None):
+    def __init__(self, email: str, password: str ,phone=None):
         super().__init__()
         self.email = email
         self.password = password
-        self.region = region
+        self.region = "us"
         self.phone = str(phone)
-        self.API_URL = f"https://{region}-api.coolkit.cc:8080/api"
+        self.API_URL = f"https://{self.region}-api.coolkit.cc:8080/api"
         self.__check_creds_action()
     def getDevices(self):
         res = self.__make_request(uri = "/user/device", qs = f"?lang=en&appid={self.APP_ID}&ts={str(time.time())}&version=6&getTags=1")
@@ -40,16 +41,16 @@ class Ewelink(Constants):
         except KeyError:
             raise Exception("Authorization failed.")
     def __check_creds(self) -> dict:
-        if self.region not in ['as', 'us', 'eu']:
-            print({'error': 404, 'message': 'Region does not exist.'})
-            raise Exception("The Region does not exist.")
         res = self.__get_creds()
         try:
-            if type(res['region']) == str and type(res['error']) == int:
-                res['message'] = "Please give the correct region"
-                return res
-            if 'at' in [i for i in res]:
+            keys = [i for i in res]
+            if 'region' in keys and 'error' in keys:
+                self.API_URL = f"https://{res['region']}-api.coolkit.cc:8080/api"
+                res = self.__get_creds()
+                keys = [i for i in res]
+            if 'at' in keys:
                 return {'log':'ok', 'status':'success'}
+            print(res)
             return {'error': res['error'], 'message': self.errors[res['error']]}
         except KeyError:
             return {'log':'ok', 'status':'success'}
