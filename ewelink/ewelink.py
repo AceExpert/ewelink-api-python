@@ -12,6 +12,7 @@ from typing import Dict
 
 from .constants import Constants
 from .exceptions import *
+from .models import Object
 
 class Ewelink(Constants):
     def __init__(self, email: str, password: str, phone: int = None):
@@ -24,10 +25,10 @@ class Ewelink(Constants):
         self.__check_creds_action()
     def getDevices(self):
         res = self.__make_request(uri = "/user/device", qs = f"?lang=en&appid={self.APP_ID}&ts={str(time.time())}&version=6&getTags=1")
-        return res.json()
+        return Object(res.json())
     def getDevice(self, id : str):
         res = self.__make_request(uri = "/user/device/"+id, qs = f"?deviceid={id}&appid={self.APP_ID}&nonce={self.__nonce()}&ts={str(time.time())}&version=6")
-        return res.json()
+        return Object(res.json())
     def setDevicePowerState(self, id : str, state : str, channel = 1):
         cstate = self.getDevicePowerState(id, channel=channel)
         if state == 'toggle': state = 'on' if cstate == 'off' else 'off'  
@@ -38,7 +39,7 @@ class Ewelink(Constants):
         res['switch'] = switch; return res
     def getDevicePowerState(self, id : str, channel = 1):
         return self.getDevice(id)['params']['switch']
-    def __make_request(self, uri: str, method: str= 'GET', json: Dict[str, str] = {}, qs: str = "") -> Dict[str, str]:
+    def __make_request(self, uri: str, method: str= 'GET', json: Dict[str, str] = {}, qs: str = "") -> requests.Response:
         try:
             res = requests.request(method, self.API_URL+uri+qs, headers={ 'Authorization': f"Bearer {self.__get_creds()['at']}", }, json=json)
             return res
