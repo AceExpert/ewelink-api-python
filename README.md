@@ -21,7 +21,7 @@ async def main(client: Client):
     print(device.state)
     print(device.created_at)
     print("Brand Name:", device.brand.name, "Logo URL:", device.brand.logo.url)
-    print("Device online?", device.is_online)
+    print("Device online?", device.online)
 ```
 
 Other HTTP methods will be added later.
