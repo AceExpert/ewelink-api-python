@@ -1,6 +1,7 @@
 from enum import Enum
 
 class DeviceType(Enum):
+    UNKNOWN = 0
     SOCKET = 1
     SOCKET_2 = 2
     SOCKET_3 = 3
@@ -54,9 +55,9 @@ class DeviceType(Enum):
     WARM_AIR_BLOWER = 1003
 
 class PowerState(Enum):
-    OFF = 0
-    ON = 1
-    TOGGLE = 2
+    off = 0
+    on = 1
+    toggle = 2
 
 class DeviceChannelLengh(Enum):
     SOCKET = 1
@@ -79,6 +80,7 @@ class DeviceChannelLengh(Enum):
     CUN_YOU_DOOR = 4
 
 class CountryCodes(Enum):
+    UNKNOWN = "0"
     China = "+86"
     Afghanistan = "+93"
     Albania = "+355"

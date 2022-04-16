@@ -3,6 +3,7 @@ from datetime import datetime
 from dataclasses import dataclass
 
 from .enumerations import CountryCodes
+from ..http import HttpClient
 
 @dataclass
 class AppInfo:
@@ -17,16 +18,16 @@ class ClientInfo:
     os: str | None
     rom_version: str | int | None
 
-
 class ClientUser:
     ip_country: str | None
     online_time: datetime | None
     offline_time: datetime | None
     location: str | None
+    http: HttpClient | None
     app_infos: list[AppInfo]
     info: ClientInfo
 
-    def __init__(self, data: dict[str, str | bool | dict[str, str | bool | int | Any]], http: Any | None) -> None:
+    def __init__(self, data: dict[str, str | bool | dict[str, str | bool | int | Any]], http: HttpClient | None) -> None:
         self.email: str | None = data.get('email', None)
         self.ip_country = None
         self.location = None
@@ -36,7 +37,7 @@ class ClientUser:
         self.id: str = data['_id']
         self.country_code: CountryCodes | None =\
             CountryCodes.__dict__['_value2member_map_'].get(
-                data.get('countryCode', None), None
+                data.get('countryCode', "0"), "0"
             )
         self.online_time = None
         self.offline_time = None
@@ -48,19 +49,19 @@ class ClientUser:
         if online_time := data.get('onlineTime', None):
             self.online_time: datetime = datetime.strptime(online_time, "%Y-%m-%dT%H:%M:%S.%fZ")
         if offline_time := data.get('offlineTime', None):
-            self.online_time: datetime = datetime.strptime(offline_time, "%Y-%m-%dT%H:%M:%S.%fZ")
+            self.offline_time: datetime = datetime.strptime(offline_time, "%Y-%m-%dT%H:%M:%S.%fZ")
         self.is_online: bool = data.get('online', False)
         if location := data.get('location', None):
             self.location = location
-        self.http: Any | None = http
+        self.http = http
         self.app_infos: list[AppInfo] = [AppInfo(os=info['os'] if info.get('os', None) else None, 
                                                  version=info['appVersion'] if info.get('appVersion', None) else None) 
-                                         for info in data.get('appInfos')]
+                                         for info in data.get('appInfos', [])]
         self.info: ClientInfo = ClientInfo(
             version=data['clientInfo']['appVersion'] if data['clientInfo'].get('appVersion', None) else None,
             imei=data['clientInfo']['imei'] if data['clientInfo'].get('imei', None) else None,
             model = data['clientInfo']['model'] if data['clientInfo'].get('model', None) else None,
             os = data['clientInfo']['os'] if data['clientInfo'].get('os', None) else None,
-            rom_version = data['clientInfo']['rom_version'] if data['clientInfo'].get('rom_version', None) else None,
+            rom_version = data['clientInfo']['romVersion'] if data['clientInfo'].get('romVersion', None) else None,
         )
         

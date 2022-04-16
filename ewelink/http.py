@@ -8,7 +8,6 @@ import base64, hmac, json, hashlib
 
 from typing import TypedDict, Any
 
-from .models import ClientUser
 from .constants import Constants as constants
 from .utils import nonce
 
@@ -61,18 +60,18 @@ class HttpClient:
         self.loop = loop or asyncio.get_event_loop()
         self.session = aiohttp.ClientSession()
 
-    async def login(self, **kwargs: TypedDict('Login', {'credentials': CredentialsDict | None, 'sign': str | None})) -> ClientUser:
+    async def login(self, **kwargs: TypedDict('Login', {'credentials': CredentialsDict | None, 'sign': str | None})) -> dict[str, str | bool | dict[str, str | bool | int | Any]]:
         self.credentials = kwargs.get('credentials', None) or\
         {
-            'appid': constants.APP_ID, 
-            'password': self.password, 
-            'ts': int(time.time()), 
-            'version': 6, 
+            'appid': constants.APP_ID,
+            'password': self.password,
+            'ts': int(time.time()),
+            'version': 6,
             'nonce': nonce(),
-            'os': 'iOS', 
-            'model': 'iPhone10,6', 
-            'romVersion': '11.1.2', 
-            'appVersion': '3.5.3', 
+            'os': 'iOS',
+            'model': 'iPhone10,6',
+            'romVersion': '11.1.2',
+            'appVersion': '3.5.3',
             'imei': str(uuid.uuid4())
         } 
         if (
@@ -98,4 +97,18 @@ class HttpClient:
         else:
             self.token = data.get('at')
             self.refresh_token = data.get('rt')
-            return ClientUser(data = data.get('user'), http=self)
+            return data.get('user', {'_id': '0', 'clientInfo': {}, 'createdAt': '1000-01-01T00:00:00.000Z'})
+    
+    async def get_devices(self) -> dict[str, list[dict[str, str | int | Any]]]:
+        response =\
+        await self.session.get(self.BASE + '/user/device', 
+            params=\
+            {
+                'lang': 'en',
+                'appid': constants.APP_ID,
+                'ts': int(time.time()),
+                'version': 8,
+                'getTags': 1,
+            }, 
+            headers = {'Authorization': f'Bearer {self.token}'})
+        return await response.json()
