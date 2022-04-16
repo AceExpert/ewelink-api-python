@@ -79,6 +79,12 @@ class DeviceChannelLengh(Enum):
     SWITCH_4 = 4
     CUN_YOU_DOOR = 4
 
+class Region(Enum):
+    US = 'us'
+    AS = 'as'
+    EU = 'eu'
+    CN = 'cn'
+
 class CountryCodes(Enum):
     UNKNOWN = "0"
     China = "+86"

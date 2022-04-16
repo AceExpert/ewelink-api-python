@@ -2,7 +2,7 @@ from typing import Any
 from datetime import datetime
 from dataclasses import dataclass
 
-from .enumerations import CountryCodes
+from .enumerations import CountryCodes, Region
 from ..http import HttpClient
 
 @dataclass
@@ -29,6 +29,7 @@ class ClientUser:
 
     def __init__(self, data: dict[str, str | bool | dict[str, str | bool | int | Any]], http: HttpClient | None) -> None:
         self.email: str | None = data.get('email', None)
+        self.region: Region = Region[http.region.upper()]
         self.ip_country = None
         self.location = None
         self.language: str = data.get('language', data.get('lang', 'en'))
@@ -50,7 +51,7 @@ class ClientUser:
             self.online_time: datetime = datetime.strptime(online_time, "%Y-%m-%dT%H:%M:%S.%fZ")
         if offline_time := data.get('offlineTime', None):
             self.offline_time: datetime = datetime.strptime(offline_time, "%Y-%m-%dT%H:%M:%S.%fZ")
-        self.is_online: bool = data.get('online', False)
+        self.online: bool = data.get('online', False)
         if location := data.get('location', None):
             self.location = location
         self.http = http
@@ -64,4 +65,5 @@ class ClientUser:
             os = data['clientInfo']['os'] if data['clientInfo'].get('os', None) else None,
             rom_version = data['clientInfo']['romVersion'] if data['clientInfo'].get('romVersion', None) else None,
         )
+        self.data = data
         

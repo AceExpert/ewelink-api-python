@@ -54,9 +54,16 @@ class Device:
             sta_mac = data['params'].get('staMac', None)
         )
         self.version: int = data['params'].get('version', 0)
-        self.is_online: bool = data.get('online', False)
+        self.online: bool = data.get('online', False)
         self.location: str | None = data.get('location') if data.get('location', None) else None
+        self.data = data
         self.type: DeviceType = DeviceType.__dict__['_value2member_map_'].get(int(data.get('type', 0)), 0)
+
+    def __repr__(self) -> str:
+        return f"<Device name={self.name} id={self.id} switch={self.state} online?={self.online} type={self.type} network={self.network}>"
+
+    def __str__(self) -> str:
+        return self.id
 
 class Devices(list[Device]):
     def __init__(self, devices: Iterable[Device]):

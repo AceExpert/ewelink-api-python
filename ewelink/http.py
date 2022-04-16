@@ -112,3 +112,7 @@ class HttpClient:
             }, 
             headers = {'Authorization': f'Bearer {self.token}'})
         return await response.json()
+
+    async def get_gateway(self) -> dict[str, Any]:
+        response = await self.session.get('https://as-dispa.coolkit.cc/dispatch/app', headers = {'Authorization': f'Token {self.token}'})
+        return await response.json()
