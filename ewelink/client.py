@@ -57,7 +57,7 @@ class Client:
             if not client.http.session.closed:
                 asyncio.get_event_loop().run_until_complete(client.http.session.close())
             if client.ws:
-                if not client.ws.ws.closed:
+                if not client.ws.closed:
                     asyncio.get_event_loop().run_until_complete(client.ws.close())
             return result
         return decorator
@@ -70,7 +70,7 @@ def login(password: str, email: str | None = None, phone: str | int | None = Non
             if not client.http.session.closed:
                 asyncio.get_event_loop().run_until_complete(client.http.session.close())
             if client.ws:
-                if not client.ws.ws.closed:
+                if not client.ws.closed:
                     asyncio.get_event_loop().run_until_complete(client.ws.close())
             return result
         return decorator

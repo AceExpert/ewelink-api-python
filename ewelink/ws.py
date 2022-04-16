@@ -54,3 +54,7 @@ class WebSocketClient:
 
     async def close(self):
         await self.ws.close()
+
+    @property
+    def closed(self) -> bool:
+        return self.ws.closed
