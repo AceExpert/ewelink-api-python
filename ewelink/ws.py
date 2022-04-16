@@ -39,7 +39,7 @@ class WebSocketClient:
             "nonce": "".join(random.choice("abcdefghijklmnopqrstuvwxyz1234567890") for _ in range(8)),
             "sequence": str(time.time() * 1000)
         })
-        response: dict[str, str | int, dict[str, int]] = await self.ws.receive_json()
+        response: dict[str, str | int | dict[str, int]] = await self.ws.receive_json()
         if not response.get('error'):
             if config := response.get('config', {}):
                 if type(config) == dict:
