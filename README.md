@@ -8,7 +8,7 @@ Python 3.9+
 ## Example
 ```py
 import ewelink
-from ewelink import Client
+from ewelink import Client, PowerState, DeviceOffline
 
 @ewelink.login('password', 'user.name@email.com')
 async def main(client: Client):
