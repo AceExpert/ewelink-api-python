@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from .asset import Asset
 from .enumerations import PowerState, DeviceType
 from ..http import HttpClient
+from ..ws import WebSocketClient
 
 @dataclass
 class Brand:
@@ -22,10 +23,12 @@ class Pulse:
     width: int
 
 class Device:
+    ws: WebSocketClient | None
+    http: HttpClient | None
     online_time: datetime | None
     offline_time: datetime | None
 
-    def __init__(self, data: dict[str, str | int | Any], http: HttpClient | None = None) -> None:
+    def __init__(self, data: dict[str, str | int | Any], http: HttpClient | None = None, ws: WebSocketClient | None = None) -> None:
         self.apikey: str | None = data.get('apikey', None)
         self.id: str = data.get('deviceid', '0')
         self.brand: Brand = Brand(
@@ -44,7 +47,7 @@ class Device:
         if offline_time := data.get('offlineTime', None):
             self.offline_time = datetime.strptime(offline_time, "%Y-%m-%dT%H:%M:%S.%fZ")
         self.state: PowerState = PowerState[data['params']['switch']]
-        self.on_startup: PowerState = PowerState[data['params']['startup']] if data['params'].get('startup', None) else PowerState.off
+        self.startup: PowerState = PowerState[data['params']['startup']] if data['params'].get('startup', None) else PowerState.off
         self.pulse: Pulse = Pulse(
             state=PowerState[data['params']['pulse']] if data['params'].get('pulse', None) else PowerState.off,
             width=data['params'].get('pulseWidth', 0)
@@ -57,7 +60,17 @@ class Device:
         self.online: bool = data.get('online', False)
         self.location: str | None = data.get('location') if data.get('location', None) else None
         self.data = data
+        self.ws = ws
+        self.http = http
         self.type: DeviceType = DeviceType.__dict__['_value2member_map_'].get(int(data.get('type', 0)), 0)
+
+    async def edit(self, state: PowerState = None, startup: PowerState = None, pulse: Pulse | PowerState = None, pulse_width: int = None):
+        await self.ws.update_device_status(self.id,
+            switch = state.name if state else self.state.name,
+            startup = startup.name if startup else self.startup.name,
+            pulse = pulse.name if isinstance(pulse, PowerState) else pulse.state.name if pulse else self.pulse.state.name,
+            pulseWidth = pulse_width or self.pulse.width
+        )
 
     def __repr__(self) -> str:
         return f"<Device name={self.name} id={self.id} switch={self.state} online?={self.online} type={self.type} network={self.network}>"

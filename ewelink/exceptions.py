@@ -1,0 +1,2 @@
+class DeviceOffline(Exception):
+    pass

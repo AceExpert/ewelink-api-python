@@ -30,7 +30,7 @@ CredentialsDict = TypedDict(
 )
 
 class HttpClient:
-    region: str
+    region: str 
     email: str | None
     phone: str | None
     password: str
@@ -60,7 +60,7 @@ class HttpClient:
         self.loop = loop or asyncio.get_event_loop()
         self.session = aiohttp.ClientSession()
 
-    async def login(self, **kwargs: TypedDict('Login', {'credentials': CredentialsDict | None, 'sign': str | None})) -> dict[str, str | bool | dict[str, str | bool | int | Any]]:
+    async def login(self, **kwargs: CredentialsDict | str | None) -> dict[str, str | bool | dict[str, str | bool | int | Any]]:
         self.credentials = kwargs.get('credentials', None) or\
         {
             'appid': constants.APP_ID,

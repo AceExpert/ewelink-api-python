@@ -41,7 +41,7 @@ class Client:
         self._gateway_info = await self.http.get_gateway()
         await self.ws.create_websocket(self._gateway_info['domain'], self._gateway_info['port'])
         self.devices = Devices(
-            Device(data = device, http = self.http) for device in (await self.http.get_devices()).get('devicelist', [])
+            Device(data = device, http = self.http, ws=self.ws) for device in (await self.http.get_devices()).get('devicelist', [])
         )
         self.ws.set_devices(self.devices)
 

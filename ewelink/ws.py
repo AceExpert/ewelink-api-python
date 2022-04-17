@@ -1,9 +1,22 @@
 import aiohttp, time, random, asyncio
 
-from .models import ClientUser, Devices
+from typing import AnyStr, TypedDict
+
+from .models import ClientUser
+from .exceptions import DeviceOffline
 from .constants import Constants as constants
 from .http import HttpClient
-from .utils import nonce
+
+Response = TypedDict(
+    "Response", 
+    {
+        'error': int,
+        'deviceid': str,
+        'apikey': str,
+        'sequence': str | None,
+        'params': dict[str, list[dict[str, AnyStr]] | AnyStr]
+    }
+)
 
 class WebSocketClient:
     http: HttpClient
@@ -11,19 +24,21 @@ class WebSocketClient:
     ws: aiohttp.ClientWebSocketResponse | None
     session: aiohttp.ClientSession
     user: ClientUser
-    devices: Devices
-    ping_task: asyncio.Task[None] | None
+    _ping_task: asyncio.Task[None] | None = None
+    _poll_task: asyncio.Task[None] | None = None
+    _futures: dict[str, list[asyncio.Future[Response]]] = {
+        'update': []
+    }
 
-    def __init__(self, http: HttpClient, user: ClientUser, devices: Devices = Devices([])) -> None:
+    def __init__(self, http: HttpClient, user: ClientUser) -> None:
         self.http = http
         self.user = user
-        self.devices = devices
+        self.devices = []
         self.heartbeat = 90
-        self.ping_task = None
         self.session = http.session
         self.ws = None
 
-    def set_devices(self, devices: Devices):
+    def set_devices(self, devices):
         self.devices = devices
 
     async def create_websocket(self, domain: str, port: int | str):
@@ -45,7 +60,43 @@ class WebSocketClient:
                 if type(config) == dict:
                     if hb_interval := response['config'].get('hbInterval', ''):
                         if type(hb_interval) == int: self.heartbeat = hb_interval + 7
-        self.ping_task = self.http.loop.create_task(self.ping_hb())
+        self._ping_task = self.http.loop.create_task(self.ping_hb())
+        self._poll_task = self.http.loop.create_task(self.poll_event())
+
+    async def update_device_status(self, deviceid: str, **kwargs: list[dict[str, AnyStr]] | AnyStr) -> Response:
+        fut: asyncio.Future[Response] = self.http.loop.create_future()
+        self._futures['update'].append(fut)
+        await self.ws.send_json({
+            "action": "update",
+            "deviceid": deviceid,
+            "apikey": self.user.api_key,
+            "userAgent": "app",
+            "sequence": str(time.time() * 1000),
+            "params": kwargs
+        })
+        result = await asyncio.wait_for(fut, timeout = 10)
+        return result
+
+    async def poll_event(self):
+        while True:
+            msg: dict[str, dict[str | AnyStr] | AnyStr] = await self.ws.receive_json()
+            if action := msg.get('action', None):
+                match action:
+                    case "sysmsg":
+                        if self.devices:
+                            if device := self.devices.get(msg['deviceid']):
+                                device.online = msg['params']['online']
+            if 'error' in msg and 'params' not in msg:
+                match msg['error']:
+                    case 0:
+                        self._futures['update'][0].set_result(msg)
+                    case 503:
+                        self._futures['update'][0].set_exception(DeviceOffline("Device is offline."))
+                self._futures['update'].pop(0)
+            elif 'error' in msg and 'params' in msg:
+                if not msg['error']:
+                    self._futures['query'][0].set_result(msg)
+                    self._futures['query'].pop(0)
 
     async def ping_hb(self):
         while True:

@@ -55,9 +55,8 @@ class DeviceType(Enum):
     WARM_AIR_BLOWER = 1003
 
 class PowerState(Enum):
-    off = 0
-    on = 1
-    toggle = 2
+    off = 'off'
+    on = 'on'
 
 class DeviceChannelLengh(Enum):
     SOCKET = 1

@@ -22,6 +22,11 @@ async def main(client: Client):
     print(device.created_at)
     print("Brand Name:", device.brand.name, "Logo URL:", device.brand.logo.url)
     print("Device online?", device.online)
+    
+    try:
+        await device.edit(PowerState.on)
+    except DeviceOffline:
+        print("Device is offline!")
 ```
 
 Other HTTP methods will be added later.
