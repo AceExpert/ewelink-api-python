@@ -8,7 +8,7 @@ Python 3.10+
 ## Example
 ```py
 import ewelink
-from ewelink import Client, PowerState, DeviceOffline
+from ewelink import Client, Power, DeviceOffline
 
 @ewelink.login('password', 'user.name@email.com')
 async def main(client: Client):
@@ -24,7 +24,7 @@ async def main(client: Client):
     print("Device online?", device.online)
     
     try:
-        await device.edit(PowerState.on)
+        await device.edit(Power.on)
     except DeviceOffline:
         print("Device is offline!")
 ```

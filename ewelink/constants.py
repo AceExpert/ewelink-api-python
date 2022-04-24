@@ -23,5 +23,5 @@ class Constants:
         'noFirmware': "Can't get model or firmware version",
         'invalidAuth': 'Library needs to be initialized using email and password',
         'invalidCredentials': 'Invalid credentials provided',
-        'invalidPowerState': 'Invalid power state. Expecting: "on", "off" or "toggle"',
+        'invalidPower': 'Invalid power state. Expecting: "on", "off" or "toggle"',
     }

@@ -1,9 +1,9 @@
-from typing import Any, Iterable
+from typing import Any
 from datetime import datetime
 from dataclasses import dataclass
 
 from .asset import Asset
-from .enumerations import PowerState, DeviceType
+from .enumerations import Power, DeviceType
 from ..http import HttpClient
 from ..ws import WebSocketClient
 
@@ -19,7 +19,7 @@ class Network:
 
 @dataclass
 class Pulse:
-    state: PowerState
+    state: Power
     width: int
 
 class Device:
@@ -46,10 +46,10 @@ class Device:
             self.online_time = datetime.strptime(online_time, "%Y-%m-%dT%H:%M:%S.%fZ")
         if offline_time := data.get('offlineTime', None):
             self.offline_time = datetime.strptime(offline_time, "%Y-%m-%dT%H:%M:%S.%fZ")
-        self.state: PowerState = PowerState[data['params']['switch']]
-        self.startup: PowerState = PowerState[data['params']['startup']] if data['params'].get('startup', None) else PowerState.off
+        self.state: Power = Power[data['params']['switch']]
+        self.startup: Power = Power[data['params']['startup']] if data['params'].get('startup', None) else Power.off
         self.pulse: Pulse = Pulse(
-            state=PowerState[data['params']['pulse']] if data['params'].get('pulse', None) else PowerState.off,
+            state=Power[data['params']['pulse']] if data['params'].get('pulse', None) else Power.off,
             width=data['params'].get('pulseWidth', 0)
         )
         self.network: Network = Network(
@@ -64,11 +64,11 @@ class Device:
         self.http = http
         self.type: DeviceType = DeviceType.__dict__['_value2member_map_'].get(int(data.get('type', 0)), 0)
 
-    async def edit(self, state: PowerState = None, startup: PowerState = None, pulse: Pulse | PowerState = None, pulse_width: int = None):
+    async def edit(self, state: Power = None, startup: Power = None, pulse: Pulse | Power = None, pulse_width: int = None):
         await self.ws.update_device_status(self.id,
             switch = state.name if state else self.state.name,
             startup = startup.name if startup else self.startup.name,
-            pulse = pulse.name if isinstance(pulse, PowerState) else pulse.state.name if pulse else self.pulse.state.name,
+            pulse = pulse.name if isinstance(pulse, Power) else pulse.state.name if pulse else self.pulse.state.name,
             pulseWidth = pulse_width or self.pulse.width
         )
 
@@ -77,11 +77,3 @@ class Device:
 
     def __str__(self) -> str:
         return self.id
-
-class Devices(list[Device]):
-    def __init__(self, devices: Iterable[Device]):
-        super().__init__(devices)
-
-    def get(self, id: str) -> Device | None:
-        for device in self:
-            if device.id == id: return device

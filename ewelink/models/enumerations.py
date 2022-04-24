@@ -54,7 +54,7 @@ class DeviceType(Enum):
     NEW_HUMIDIFIER = 1002
     WARM_AIR_BLOWER = 1003
 
-class PowerState(Enum):
+class Power(Enum):
     off = 'off'
     on = 'on'
 

@@ -7,6 +7,15 @@ from .exceptions import DeviceOffline
 from .constants import Constants as constants
 from .http import HttpClient
 
+class DeviceInterface:
+    online: bool
+    id: str
+
+class DevicesInterface(list[DeviceInterface]):
+    
+    def get(self, id: str) -> DeviceInterface | None:
+        pass
+
 Response = TypedDict(
     "Response", 
     {
@@ -24,6 +33,7 @@ class WebSocketClient:
     ws: aiohttp.ClientWebSocketResponse | None
     session: aiohttp.ClientSession
     user: ClientUser
+    devices: DevicesInterface
     _ping_task: asyncio.Task[None] | None = None
     _poll_task: asyncio.Task[None] | None = None
     _futures: dict[str, list[asyncio.Future[Response]]] = {
@@ -38,7 +48,7 @@ class WebSocketClient:
         self.session = http.session
         self.ws = None
 
-    def set_devices(self, devices):
+    def set_devices(self, devices: DevicesInterface):
         self.devices = devices
 
     async def create_websocket(self, domain: str, port: int | str):
