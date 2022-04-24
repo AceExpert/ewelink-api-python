@@ -3,7 +3,7 @@ An API Wrapper for the Ewelink platform.
 The API Documentation can be found [here](https://coolkit-technologies.github.io/eWeLink-API/#/en).
 
 ## Python
-Python 3.9+
+Python 3.10+
 
 ## Example
 ```py
