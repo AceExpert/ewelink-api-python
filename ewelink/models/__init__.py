@@ -14,3 +14,5 @@ class Devices(list[Device]):
     def get(self, id: str) -> Device | None:
         for device in self:
             if device.id == id: return device
+
+del Iterable

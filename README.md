@@ -8,15 +8,15 @@ Python 3.10+
 ## Example
 ```py
 import ewelink
-from ewelink import Client, Power, DeviceOffline
+from ewelink import Client, DeviceOffline
 
-@ewelink.login('password', 'user.name@email.com')
+@ewelink.login('password', 'user.address@email.com')
 async def main(client: Client):
     print(client.region)
     print(client.user.info)
     print(client.devices)
     
-    device = client.devices.get('10008ecfd9')
+    device = client.get_device('10008ecfd9')
     
     print(device.state)
     print(device.created_at)
@@ -24,7 +24,7 @@ async def main(client: Client):
     print("Device online?", device.online)
     
     try:
-        await device.edit(Power.on)
+        await device.on()
     except DeviceOffline:
         print("Device is offline!")
 ```

@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 from .asset import Asset
 from .enumerations import Power, DeviceType
-from ..http import HttpClient
-from ..ws import WebSocketClient
+from ..state import Connection
+from ..exceptions import DeviceOffline
 
 @dataclass
 class Brand:
@@ -23,17 +23,16 @@ class Pulse:
     width: int
 
 class Device:
-    ws: WebSocketClient | None
-    http: HttpClient | None
+    _state: Connection | None = None
     online_time: datetime | None
     offline_time: datetime | None
 
-    def __init__(self, data: dict[str, str | int | Any], http: HttpClient | None = None, ws: WebSocketClient | None = None) -> None:
+    def __init__(self, data: dict[str, str | int | Any], state: Connection | None) -> None:
         self.apikey: str | None = data.get('apikey', None)
         self.id: str = data.get('deviceid', '0')
         self.brand: Brand = Brand(
             name = data.get('brandName', None), 
-            logo = Asset(data.get('brandLogoUrl', None), session=http.session if http else None)
+            logo = Asset(data.get('brandLogoUrl', None), session=state.http.session if state else None)
         )
         self.url: str | None = data.get('deviceUrl', None)
         self.hash_id: str = data.get('_id', '0')
@@ -46,10 +45,10 @@ class Device:
             self.online_time = datetime.strptime(online_time, "%Y-%m-%dT%H:%M:%S.%fZ")
         if offline_time := data.get('offlineTime', None):
             self.offline_time = datetime.strptime(offline_time, "%Y-%m-%dT%H:%M:%S.%fZ")
-        self.state: Power = Power[data['params']['switch']]
-        self.startup: Power = Power[data['params']['startup']] if data['params'].get('startup', None) else Power.off
+        self.state: Power = Power[data['params']['switch']] if data['params'].get("switch", None) else Power.unknown
+        self.startup: Power = Power[data['params']['startup']] if data['params'].get('startup', None) else Power.unknown
         self.pulse: Pulse = Pulse(
-            state=Power[data['params']['pulse']] if data['params'].get('pulse', None) else Power.off,
+            state=Power[data['params']['pulse']] if data['params'].get('pulse', None) else Power.unknown,
             width=data['params'].get('pulseWidth', 0)
         )
         self.network: Network = Network(
@@ -60,17 +59,33 @@ class Device:
         self.online: bool = data.get('online', False)
         self.location: str | None = data.get('location') if data.get('location', None) else None
         self.data = data
-        self.ws = ws
-        self.http = http
+        self._state = state
         self.type: DeviceType = DeviceType.__dict__['_value2member_map_'].get(int(data.get('type', 0)), 0)
 
     async def edit(self, state: Power = None, startup: Power = None, pulse: Pulse | Power = None, pulse_width: int = None):
-        await self.ws.update_device_status(self.id,
-            switch = state.name if state else self.state.name,
-            startup = startup.name if startup else self.startup.name,
-            pulse = pulse.name if isinstance(pulse, Power) else pulse.state.name if pulse else self.pulse.state.name,
-            pulseWidth = pulse_width or self.pulse.width
-        )
+        try:
+            await self._state.ws.update_device_status(self.id,
+                switch = state.name if state else self.state.name,
+                startup = startup.name if startup else self.startup.name,
+                pulse = pulse.name if isinstance(pulse, Power) else pulse.state.name if pulse else self.pulse.state.name,
+                pulseWidth = pulse_width or self.pulse.width
+            )
+        except DeviceOffline as offline:
+            raise DeviceOffline(*offline.args) from offline
+        else:
+            self.state = state or self.state
+            self.startup = startup or self.startup
+            if isinstance(pulse, Pulse):
+                self.pulse = pulse
+            elif isinstance(pulse, Power):
+                self.pulse.state = pulse
+            self.pulse.width = pulse_width or self.pulse.width
+
+    async def on(self):
+        await self.edit(state=Power.on)
+
+    async def off(self):
+        await self.edit(state=Power.off)
 
     def __repr__(self) -> str:
         return f"<Device name={self.name} id={self.id} switch={self.state} online?={self.online} type={self.type} network={self.network}>"

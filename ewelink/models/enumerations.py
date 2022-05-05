@@ -57,6 +57,7 @@ class DeviceType(Enum):
 class Power(Enum):
     off = 'off'
     on = 'on'
+    unknown = 'unknown'
 
 class DeviceChannelLengh(Enum):
     SOCKET = 1

@@ -8,13 +8,8 @@ from .constants import Constants as constants
 from .http import HttpClient
 
 class DeviceInterface:
-    online: bool
     id: str
-
-class DevicesInterface(list[DeviceInterface]):
-    
-    def get(self, id: str) -> DeviceInterface | None:
-        pass
+    online: bool
 
 Response = TypedDict(
     "Response", 
@@ -33,7 +28,7 @@ class WebSocketClient:
     ws: aiohttp.ClientWebSocketResponse | None
     session: aiohttp.ClientSession
     user: ClientUser
-    devices: DevicesInterface
+    devices: dict[str, DeviceInterface]
     _ping_task: asyncio.Task[None] | None = None
     _poll_task: asyncio.Task[None] | None = None
     _futures: dict[str, list[asyncio.Future[Response]]] = {
@@ -48,7 +43,7 @@ class WebSocketClient:
         self.session = http.session
         self.ws = None
 
-    def set_devices(self, devices: DevicesInterface):
+    def set_devices(self, devices: dict[str, DeviceInterface]):
         self.devices = devices
 
     async def create_websocket(self, domain: str, port: int | str):
@@ -89,12 +84,12 @@ class WebSocketClient:
 
     async def poll_event(self):
         while True:
-            msg: dict[str, dict[str | AnyStr] | AnyStr] = await self.ws.receive_json()
+            msg: dict[str, dict[str, bool | AnyStr] | AnyStr] = await self.ws.receive_json()
             if action := msg.get('action', None):
                 match action:
                     case "sysmsg":
                         if self.devices:
-                            if device := self.devices.get(msg['deviceid']):
+                            if device := self.devices.get(msg['deviceid'], None):
                                 device.online = msg['params']['online']
             if 'error' in msg and 'params' not in msg:
                 match msg['error']:

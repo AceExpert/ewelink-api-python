@@ -10,20 +10,34 @@ import aiohttp ,\
        asyncio
 
 from typing import TypeVar, Type, Callable, Coroutine, Any
+from dataclasses import dataclass
 
 from .models import ClientUser, Device, Devices, Region
 from .http import HttpClient
 from .ws import WebSocketClient
+from .state import Connection
 
 T = TypeVar("T")
 V = TypeVar("V")
+ClientT = TypeVar("ClientT", bound="Client")
+GatewayT = TypeVar("GatewayT", bound="Gateway")
 
 Decorator = Callable[[Callable[[T], Coroutine[None, Any, V]]], V]
 
+@dataclass
+class Gateway:
+    domain: str
+    port: int | str
+
+    @classmethod
+    def from_dict(cls: Type[GatewayT], data: dict[str, str | int]) -> GatewayT:
+        return cls(domain = data.get("domain"), port = data.get("port"))
+
 class Client:
     http: HttpClient
+    gateway: Gateway | None = None
     ws: WebSocketClient | None
-    devices: Devices = []
+    _devices: dict[str, Device] = {}
     user: ClientUser | None
     loop: asyncio.AbstractEventLoop
 
@@ -38,19 +52,30 @@ class Client:
         await self.http._create_session(loop=self.loop)
         self.user = ClientUser(data = await self.http.login(), http=self.http)
         self.ws = WebSocketClient(http = self.http, user = self.user)
-        self._gateway_info = await self.http.get_gateway()
-        await self.ws.create_websocket(self._gateway_info['domain'], self._gateway_info['port'])
-        self.devices = Devices(
-            Device(data = device, http = self.http, ws=self.ws) for device in (await self.http.get_devices()).get('devicelist', [])
-        )
-        self.ws.set_devices(self.devices)
+        self.gateway = Gateway.from_dict(await self.http.get_gateway())
+        await self.ws.create_websocket(self.gateway.domain, self.gateway.port)
+        self._devices =\
+        {
+            device['deviceid']: Device(data = device, state = self._get_state()) for device in (await self.http.get_devices()).get('devicelist', [])
+        }
+        self.ws.set_devices(self._devices)
+
+    def _get_state(self) -> Connection:
+        return Connection(ws = self.ws, http = self.http)
+
+    def get_device(self, id: str) -> Device | None:
+        return self.devices.get(id)
+
+    @property
+    def devices(self):
+        return Devices(self._devices.values())
 
     @property
     def region(self):
         return Region[self.http.region.upper()]
 
     @classmethod
-    def setup(cls: Type[T], password: str, email: str | None = None, phone: str | int | None = None, *, region: str = 'us') -> Decorator[T, V]:
+    def setup(cls: Type[ClientT], password: str, email: str | None = None, phone: str | int | None = None, *, region: str = 'us') -> Decorator[ClientT, V]:
         client: Client = cls(password, email, phone, region = region)
         def decorator(f: Callable[[Client], Coroutine[None, Any, V]]) -> V:
             result = asyncio.get_event_loop().run_until_complete(f(client))
