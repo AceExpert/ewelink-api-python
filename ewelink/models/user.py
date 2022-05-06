@@ -3,6 +3,7 @@ from datetime import datetime
 from dataclasses import dataclass
 
 from .enumerations import CountryCodes, Region
+from .object import Object
 from ..http import HttpClient
 
 @dataclass
@@ -65,5 +66,5 @@ class ClientUser:
             os = data['clientInfo']['os'] if data['clientInfo'].get('os', None) else None,
             rom_version = data['clientInfo']['romVersion'] if data['clientInfo'].get('romVersion', None) else None,
         )
-        self.data = data
+        self.data: Object = Object(data, name = 'UserData')
         

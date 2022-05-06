@@ -3,6 +3,7 @@ from datetime import datetime
 from dataclasses import dataclass
 
 from .asset import Asset
+from .object import Object
 from .enumerations import Power, DeviceType
 from ..state import Connection
 from ..exceptions import DeviceOffline
@@ -45,6 +46,7 @@ class Device:
             self.online_time = datetime.strptime(online_time, "%Y-%m-%dT%H:%M:%S.%fZ")
         if offline_time := data.get('offlineTime', None):
             self.offline_time = datetime.strptime(offline_time, "%Y-%m-%dT%H:%M:%S.%fZ")
+        self.params: Object = Object(data['params'], name = "Params")
         self.state: Power = Power[data['params']['switch']] if data['params'].get("switch", None) else Power.unknown
         self.startup: Power = Power[data['params']['startup']] if data['params'].get('startup', None) else Power.unknown
         self.pulse: Pulse = Pulse(

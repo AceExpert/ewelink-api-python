@@ -18,6 +18,10 @@ async def main(client: Client):
     
     device = client.get_device('10008ecfd9')
     
+    print(device.params) 
+        #Raw device specific properties 
+        #can be accessed easily like: device.params.switch or device.params['startup'] (a subclass of dict)
+
     print(device.state)
     print(device.created_at)
     print("Brand Name:", device.brand.name, "Logo URL:", device.brand.logo.url)

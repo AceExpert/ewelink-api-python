@@ -4,6 +4,7 @@ from .enumerations import DeviceType, DeviceChannelLengh, Power, CountryCodes, R
 from .user import AppInfo, ClientInfo, ClientUser
 from .device import Device, Network, Pulse
 from .asset import Asset
+from .object import Object
 
 PowerState = Power
 
