@@ -59,6 +59,33 @@ class Power(Enum):
     on = 'on'
     unknown = 'unknown'
 
+    def __init__(self, *args) -> None:
+        self.channels = tuple()
+
+    def __getitem__(self, channels: tuple[int, ...] | int):
+        self.channels = channels if isinstance(channels, tuple) else (channels,)
+        return self
+
+    def to_dict(self) -> list[dict[str, str | int]] | dict[str, str | int]:
+        if self.channels:
+            return dict(switches = [dict(switch = self.value, outlet = channel) for channel in self.channels])
+        else:
+            return dict(switch = self.value)
+
+class _powerdict(dict):
+    def __missing__(self, channels: tuple[int, ...] | int):
+        if not isinstance(channels, (tuple, int,)):
+            raise KeyError(f'Key "{channels}" not found.')
+        channels = channels if isinstance(channels, tuple) else (channels,)
+        class _deferredpower:
+            on = property(lambda _: Power.on[channels])
+            off = property(lambda _: Power.off[channels])
+            unknown = property(lambda _: Power.unknown[channels])
+
+        return _deferredpower()
+
+Power._member_map_ = _powerdict(Power._member_map_)
+
 class DeviceChannelLengh(Enum):
     SOCKET = 1
     SWITCH_CHANGE = 1

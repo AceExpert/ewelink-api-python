@@ -23,6 +23,8 @@ class Object(dict):
     def __setattr__(self, _k: str, _v: Any) -> None:
         if _k == '__name__':
             return super().__setattr__(_k, _v)
+        elif _k in super().keys():
+            super().__setitem__(_k, Object(_v))
         raise NotImplementedError("This is read only.")
 
     def __iter__(self) -> Generator[Any, None, None]:

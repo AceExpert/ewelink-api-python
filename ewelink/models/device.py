@@ -7,6 +7,7 @@ from .object import Object
 from .enumerations import Power, DeviceType
 from ..state import Connection
 from ..exceptions import DeviceOffline
+from ..utils import generics
 
 @dataclass
 class Brand:
@@ -66,28 +67,38 @@ class Device:
 
     async def edit(self, state: Power = None, startup: Power = None, pulse: Pulse | Power = None, pulse_width: int = None):
         try:
-            await self._state.ws.update_device_status(self.id,
-                switch = state.name if state else self.state.name,
+            _switch = state.to_dict()
+            params = dict(
                 startup = startup.name if startup else self.startup.name,
                 pulse = pulse.name if isinstance(pulse, Power) else pulse.state.name if pulse else self.pulse.state.name,
                 pulseWidth = pulse_width or self.pulse.width
             )
+            params.update(_switch)
+            await self._state.ws.update_device_status(self.id, **params)
         except DeviceOffline as offline:
             raise DeviceOffline(*offline.args) from offline
         else:
-            self.state = state or self.state
+            self.state = (state or self.state) if _switch.get('switch', None) else self.state
             self.startup = startup or self.startup
             if isinstance(pulse, Pulse):
                 self.pulse = pulse
             elif isinstance(pulse, Power):
                 self.pulse.state = pulse
             self.pulse.width = pulse_width or self.pulse.width
+            if switches := _switch.get('switches', None):
+                self.params.switches = switches
 
-    async def on(self):
-        await self.edit(state=Power.on)
+    @generics(int, ...)
+    async def on(self, types = tuple()):
+        await self.edit(state=Power.on[types] if types else Power.on)
 
-    async def off(self):
-        await self.edit(state=Power.off)
+    @generics(int, ...)
+    async def off(self, types = tuple()):
+        await self.edit(state=Power.off[types] if types else Power.off)
+
+    @generics(int, ...)
+    async def switches(self, state: Power, types = tuple()):
+        await self.edit(state=state[types] if types else state)
 
     def __repr__(self) -> str:
         return f"<Device name={self.name} id={self.id} switch={self.state} online?={self.online} type={self.type} network={self.network}>"
