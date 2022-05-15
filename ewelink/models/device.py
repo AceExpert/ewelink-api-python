@@ -74,9 +74,7 @@ class Device:
                 pulseWidth = pulse_width or self.pulse.width
             )
             params.update(_switch)
-            from pprint import pprint
-            pprint(params)
-            #await self._state.ws.update_device_status(self.id, **params)
+            await self._state.ws.update_device_status(self.id, **params)
         except DeviceOffline as offline:
             raise DeviceOffline(*offline.args) from offline
         else:
