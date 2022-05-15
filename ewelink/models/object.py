@@ -8,6 +8,8 @@ class Object(dict):
         for key, value in super().items():
             if isinstance(value, dict):
                 self[key] = Object(value, name = key.title() if isinstance(key, str) else "Object")
+            if isinstance(value, list):
+                self[key] = [Object(item) if isinstance(item, (dict, list)) else item for item in value]
 
     def __repr__(self) -> str:
         _fmt = ''
