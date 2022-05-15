@@ -16,20 +16,25 @@ def main(*args: Any, **kwargs: Any) -> Callable[[Callback], T]:
     return decorator
 
 def generics(*types: TypeVar):
-    def decorator(f: Callable[[T, ...], U]) -> type[type[types]]:
+    def decorator(f: Callable[[T, ...], U]) -> type:
         class _typedfn:
-            __types: tuple[type[type], ...]
-            def __getitem__(self, _types: type[type]):
-                self.__types = _types
+            def __init__(self, obj = None) -> None:
+                self._types = tuple()
+                self._obj = obj
+
+            def __getitem__(self, _types: tuple[type[type]]):
+                self._types: tuple[type[type], ...] = _types
                 return self
 
-            @functools.wraps(f)
             def __call__(self, *args: Any, **kwds: Any) -> f.__annotations__.get('return', None):
-                kwds.update(types = self.__types if isinstance(self.__types, tuple) else tuple([self.__types]))
-                return f(*args, **kwds)
+                kwds.update(types = self._types if isinstance(self._types, tuple) else tuple([self._types]))
+                if self._obj:
+                    return f(self._obj, *args, **kwds)
+                else:
+                    return f(*args, **kwds)
 
         _typedfn.__qualname__ = f.__qualname__
-        return _typedfn()
+        return _typedfn
     return decorator
 
 

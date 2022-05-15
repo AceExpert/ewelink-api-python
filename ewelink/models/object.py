@@ -26,7 +26,7 @@ class Object(dict):
         if _k == '__name__':
             return super().__setattr__(_k, _v)
         elif _k in super().keys():
-            super().__setitem__(_k, Object(_v))
+            return super().__setitem__(_k, Object(_v))
         raise NotImplementedError("This is read only.")
 
     def __iter__(self) -> Generator[Any, None, None]:

@@ -74,7 +74,9 @@ class Device:
                 pulseWidth = pulse_width or self.pulse.width
             )
             params.update(_switch)
-            await self._state.ws.update_device_status(self.id, **params)
+            from pprint import pprint
+            pprint(params)
+            #await self._state.ws.update_device_status(self.id, **params)
         except DeviceOffline as offline:
             raise DeviceOffline(*offline.args) from offline
         else:
@@ -86,19 +88,32 @@ class Device:
                 self.pulse.state = pulse
             self.pulse.width = pulse_width or self.pulse.width
             if switches := _switch.get('switches', None):
-                self.params.switches = switches
+                if 'switches' in self.params:
+                    self.params.switches = switches
+
+    @property
+    def on(self):
+        return self._on(self)
+
+    @property
+    def off(self):
+        return self._off(self)
+
+    @property
+    def switches(self):
+        return self._switches(self)
 
     @generics(int, ...)
-    async def on(self, types = tuple()):
-        await self.edit(state=Power.on[types] if types else Power.on)
+    def _on(self, types = tuple()):
+        return self.edit(state=Power.on[types] if types else Power.on)
 
     @generics(int, ...)
-    async def off(self, types = tuple()):
-        await self.edit(state=Power.off[types] if types else Power.off)
+    def _off(self, types = tuple()):
+        return self.edit(state=Power.off[types] if types else Power.off)
 
     @generics(int, ...)
-    async def switches(self, state: Power, types = tuple()):
-        await self.edit(state=state[types] if types else state)
+    def _switches(self, state: Power, types = tuple()):
+        return self.edit(state=state[types] if types else state)
 
     def __repr__(self) -> str:
         return f"<Device name={self.name} id={self.id} switch={self.state} online?={self.online} type={self.type} network={self.network}>"

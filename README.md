@@ -16,7 +16,8 @@ async def main(client: Client):
     print(client.user.info)
     print(client.devices)
     
-    device = client.get_device('10008ecfd9')
+    device = client.get_device('10008ecfd9') #single channel device
+    device2 = client.get_device('10007fgah9') #four channel device
     
     print(device.params) 
         #Raw device specific properties 
@@ -29,6 +30,22 @@ async def main(client: Client):
     
     try:
         await device.on()
+    except DeviceOffline:
+        print("Device is offline!")
+```
+### Multi channel device control (First method)
+```py
+    try:
+        await device2.on[0, 2]() #turns on 1st and 3rd channel
+        await device2.off[1, 3]() #turns off 2nd and 4th channel
+    except DeviceOffline:
+        print("Device is offline!")
+```
+### Multi channel device control (Second method)
+```py
+    try:
+        await device2.edit(Power.on[0, 2]) #turns on 1st and 3rd channel
+        await device2.edit(Power.off[1, 3]) #turns off 2nd and 4th channel
     except DeviceOffline:
         print("Device is offline!")
 ```
