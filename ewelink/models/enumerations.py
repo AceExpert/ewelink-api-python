@@ -66,7 +66,7 @@ class Power(Enum):
         self.channels = channels if isinstance(channels, tuple) else (channels,)
         return self
 
-    def to_dict(self) -> list[dict[str, str | int]] | dict[str, str | int]:
+    def to_dict(self) -> dict[str, list[dict[str, str | int]] | str | int]:
         if self.channels:
             return dict(switches = [dict(switch = self.value, outlet = channel) for channel in self.channels])
         else:

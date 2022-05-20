@@ -1,9 +1,8 @@
 from dataclasses import dataclass
+from .http import HttpClient
+from .ws import WebSocketClient
 
 @dataclass
 class Connection:
-    from .http import HttpClient
-    from .ws import WebSocketClient
-
     ws: WebSocketClient
     http: HttpClient

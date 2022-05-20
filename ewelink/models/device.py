@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Callable, Coroutine
 from datetime import datetime
 from dataclasses import dataclass
 
@@ -8,6 +8,7 @@ from .enumerations import Power, DeviceType
 from ..state import Connection
 from ..exceptions import DeviceOffline
 from ..utils import generics
+from ..customtypes import Subscriptable
 
 @dataclass
 class Brand:
@@ -65,9 +66,17 @@ class Device:
         self._state = state
         self.type: DeviceType = DeviceType.__dict__['_value2member_map_'].get(int(data.get('type', 0)), 0)
 
-    async def edit(self, state: Power = None, startup: Power = None, pulse: Pulse | Power = None, pulse_width: int = None):
+    async def edit(self, *states: Power, startup: Power = None, pulse: Pulse | Power = None, pulse_width: int = None):
         try:
-            _switch = state.to_dict()
+            _switch: dict[str, list[dict[str, str | int]] | str | int] = {}
+            for state in states:
+                _state = state.to_dict()
+                if 'switches' in _switch:
+                    if 'switches' not in _state:
+                        raise TypeError('The argument to states must either be single channel device command (eg: Power.on, Power.off) or atmost two multi-channel device command (eg: (Power.on[0, 1], Power.off[2, 3]) , Power.off[2, 3, 4]).')
+                    _switch['switches'].append(_state['switches'])
+                else:
+                    _switch.update(_state)
             params = dict(
                 startup = startup.name if startup else self.startup.name,
                 pulse = pulse.name if isinstance(pulse, Power) else pulse.state.name if pulse else self.pulse.state.name,
@@ -90,28 +99,28 @@ class Device:
                     self.params.switches = switches
 
     @property
-    def on(self):
+    def on(self) -> Subscriptable[int, Callable[[], Coroutine[None, Any, None]]]:
         return self._on(self)
 
     @property
-    def off(self):
+    def off(self) -> Subscriptable[int, Callable[[], Coroutine[None, Any, None]]]:
         return self._off(self)
 
     @property
-    def switches(self):
+    def switches(self) -> Subscriptable[int, Callable[[Power], Coroutine[None, Any, None]]]:
         return self._switches(self)
 
     @generics(int, ...)
     def _on(self, types = tuple()):
-        return self.edit(state=Power.on[types] if types else Power.on)
+        return self.edit(Power.on[types] if types else Power.on)
 
     @generics(int, ...)
     def _off(self, types = tuple()):
-        return self.edit(state=Power.off[types] if types else Power.off)
+        return self.edit(Power.off[types] if types else Power.off)
 
     @generics(int, ...)
     def _switches(self, state: Power, types = tuple()):
-        return self.edit(state=state[types] if types else state)
+        return self.edit(state[types] if types else state)
 
     def __repr__(self) -> str:
         return f"<Device name={self.name} id={self.id} switch={self.state} online?={self.online} type={self.type} network={self.network}>"

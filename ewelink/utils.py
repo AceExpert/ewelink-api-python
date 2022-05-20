@@ -16,7 +16,7 @@ def main(*args: Any, **kwargs: Any) -> Callable[[Callback], T]:
     return decorator
 
 def generics(*types: TypeVar):
-    def decorator(f: Callable[[T, ...], U]) -> type:
+    def decorator(f: Callable[..., U]) -> type:
         class _typedfn:
             def __init__(self, obj = None) -> None:
                 self._types = tuple()
