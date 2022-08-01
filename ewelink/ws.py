@@ -1,4 +1,4 @@
-import aiohttp, time, random, asyncio
+import aiohttp, time, random, asyncio, json
 
 from typing import AnyStr, TypedDict
 
@@ -84,7 +84,10 @@ class WebSocketClient:
 
     async def poll_event(self):
         while True:
-            msg: dict[str, dict[str, bool | AnyStr] | AnyStr] = await self.ws.receive_json()
+            received = await self.ws.receive_str()
+            if received == 'pong':
+                continue
+            msg: dict[str, dict[str, bool | AnyStr] | AnyStr] = json.loads(received)
             if action := msg.get('action', None):
                 match action:
                     case "sysmsg":
