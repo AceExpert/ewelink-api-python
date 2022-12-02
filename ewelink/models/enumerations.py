@@ -58,6 +58,7 @@ class Power(Enum):
     off = 'off'
     on = 'on'
     unknown = 'unknown'
+    stay = 'stay'
 
     def __init__(self, *args) -> None:
         self.channels = tuple()

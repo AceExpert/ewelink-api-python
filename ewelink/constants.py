@@ -1,8 +1,8 @@
 from typing import ClassVar
 
 class Constants:
-    APP_ID: ClassVar[str] = 'oeVkj2lYFGnJu5XUtWisfW4utiN4u9Mq'
-    APP_SECRET: ClassVar[bytes] = b'6Nz4n0xA8s8qdxQf2GqurZj2Fs55FUvM'
+    APP_ID: ClassVar[str] = 'KOBxGJna5qkk3JLXw3LHLX3wSNiPjAVi'
+    APP_SECRET: ClassVar[bytes] = b'4v0sv6X5IM2ASIBiNDj6kGmSfxo40w7n'
     errors: ClassVar[dict[int, str]] =\
     {
         400: 'Parameter error',
