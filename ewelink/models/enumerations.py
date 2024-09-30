@@ -57,6 +57,7 @@ class DeviceType(Enum):
 class Power(Enum):
     off = 'off'
     on = 'on'
+    stay = 'stay'
     unknown = 'unknown'
 
     def __init__(self, *args) -> None:
