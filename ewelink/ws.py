@@ -79,7 +79,11 @@ class WebSocketClient:
             "sequence": str(time.time() * 1000),
             "params": kwargs
         })
-        result = await asyncio.wait_for(fut, timeout = 10)
+        try:
+            result = await asyncio.wait_for(fut, timeout = 10)
+        except asyncio.TimeoutError:
+            print("Response timed out")
+            result = None
         return result
 
     async def poll_event(self):
