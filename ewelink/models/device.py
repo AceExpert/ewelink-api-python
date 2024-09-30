@@ -49,7 +49,7 @@ class Device:
         if offline_time := data.get('offlineTime', None):
             self.offline_time = datetime.strptime(offline_time, "%Y-%m-%dT%H:%M:%S.%fZ")
         self.params: Object = Object(data['params'], name = "Params")
-        self.state: Power = Power[data['params']['switch']] if data['params'].get("switch", None) else Power.unknown
+        self.state: Power = Power[data['params']['switches'][0]['switch']] if data['params'].get("switches", None) else Power.unknown
         self.startup: Power = Power[data['params']['startup']] if data['params'].get('startup', None) else Power.unknown
         self.pulse: Pulse = Pulse(
             state=Power[data['params']['pulse']] if data['params'].get('pulse', None) else Power.unknown,
