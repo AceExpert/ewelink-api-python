@@ -49,7 +49,7 @@ class Device:
         if offline_time := data.get('offlineTime', None):
             self.offline_time = datetime.strptime(offline_time, "%Y-%m-%dT%H:%M:%S.%fZ")
         self.params: Object = Object(data['params'], name = "Params")
-        self.state: Power = Power[data['params']['switch']] if data['params'].get("switch", None) else Power.unknown
+        self.state: Power = Power[data['params']['switches'][0]['switch']] if data['params'].get("switches", None) else Power.unknown
         self.startup: Power = Power[data['params']['startup']] if data['params'].get('startup', None) else Power.unknown
         self.pulse: Pulse = Pulse(
             state=Power[data['params']['pulse']] if data['params'].get('pulse', None) else Power.unknown,
@@ -64,7 +64,7 @@ class Device:
         self.location: str | None = data.get('location') if data.get('location', None) else None
         self.data = data
         self._state = state
-        self.type: DeviceType = DeviceType.__dict__['_value2member_map_'].get(int(data.get('type', 0)), 0)
+        self.type: DeviceType = DeviceType.__dict__['_value2member_map_'].get(int(data.get('type', 0), 16), 0)
 
     async def edit(self, *states: Power, startup: Power = None, pulse: Pulse | Power = None, pulse_width: int = None):
         try:
